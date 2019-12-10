@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, shrink-to-fit=no, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Gene Regulatory Network</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+</head>
+<body>
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+              <nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container"><ul class="nav navbar-nav nav-tabs  nav-justified">
+     <li class="active"><a href="#ppt">Project Proposal</a></li>
+     <li><a href="#source">Source Code</a></li>
+     <li><a href="#links">Video Links</a></ul>
+
+  </div>
+  </nav>
+    <div class="container">
+                <div class="row" id="ppt">
+                    <div class="col-lg-12" >
+                        <h1>Project Proposal Presentation</h1>
+                        <iframe src="https://docs.google.com/presentation/d/1zsWztE2hZ6IrDa_X6Z3UNm1L0VKYgLTa6UgAaRiYYl0/embed?start=false&loop=false&delayms=3000"
+                        frameborder="0" width="900" height="500" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true" style="margin:auto"></iframe>
+                    </div>
+                </div>
+                <div class="row" id="source">
+                    <div class="col-lg-12" >
+                        <h1>Source Code</h1>
+                                              <pre>  <code>
+import pandas as p
+import numpy as n
+from scipy.io import loadmat
+import math
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVR
+from sklearn.model_selection import cross_val_score
+from sklearn import preprocessing
+from sklearn import linear_model
+
+# reading values of different genes of the yeast from the mat file
+data_yeastnames = loadmat('ystnames.mat')
+
+# reading values of the different features from the mat file
+data_yeast_features = loadmat('yeast.mat')
+
+
+# dataframe allows to create a multi dimensional matrix allowing to take combiations of rows and columns from different matrices
+
+# here we are accessing the value of dictionary key called 'yystr' which is necessarily an one-D array
+yeast_names = p.DataFrame(data_yeastnames['yystr'])
+
+# here value of key 'Yeast' is accessed which consist of values of different features
+yeast_features = p.DataFrame(data_yeast_features['Yeast'])
+
+
+#we are creating a matrix with features of genes as columns and their names as rows
+data_initial = p.DataFrame(data_yeast_features['Yeast'].T, columns=data_yeastnames['yystr'])
+
+
+data_temp = data_initial
+
+
+#number_genes consist of number of different genes of yeast data set which is 6178 in number in our case
+number_genes = len(data_temp.keys())
+
+network = p.DataFrame(n.zeros(shape=(len(data_temp.keys()), len(data_temp.keys()))), index=data_temp.keys(), columns=data_temp.keys())  #create 6178*6178 matrix with indexes of columns and rows as number oof yeast genes
+
+#traversing i through values 0-6177
+for i in range(number_genes):
+
+    keys = list(data_temp.keys())
+
+    #we are selecting each gene one by one to be targetGene gene
+    targetGene = keys[i]
+    keys.remove(targetGene)
+
+    #del keys[2:number_genes]
+    inputGenes = keys   #inut genes consist of all genes except the targetGene gene
+
+    #print(targetGene)
+    #print(inputGenes)
+
+    # converting list to matrix
+    X = data_temp[inputGenes]
+
+    #converting list to matrix
+    y = data_temp[targetGene]
+
+
+    print('Training for targetGene gene {}: {}'.format(i, targetGene))
+
+    #initialising random forest regression object with number of trees in the forest to be 200
+    rfr = RandomForestRegressor(n_estimators=200, oob_score=True, n_jobs=-1)
+
+    #this function builds the forest of 200 trees using inuts as X and Y
+    rfr.fit(X, y)
+
+    # print(clf)
+
+    #feature_importances is 6187*6178 matrix consisiting the different weights with which the yeast genes are related to each other
+    for i, x in zip(range(rfr.feature_importances_.size), rfr.feature_importances_):
+         #print(i, inputGenes[i], x)
+
+         #putting the values of weights into the grnmatrix
+         network[targetGene][inputGenes[i]] = x
+
+
+network.to_csv('yeast_grn.csv')  # putting the data to a file
+
+
+                        </code></pre>
+
+                    </div>
+                </div>
+                <div class="row" id="links">
+                    <div class="col-lg-12" >
+                        <h1>Video Links</h1>
+                        <p>The project explanation video can be found <a href="https://www.youtube.com/watch?v=d0IbHsIWmzc">here</a></p>
+
+                    </div>
+                </div>
+            </div>
+      </div>
+    </div>
+        <!-- /#page-content-wrapper -->
+
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        console.log("herererererererrer")
+        $("#wrapper").toggleClass("toggled");
+        $(".toggled").css('background-color','#e7e7e7')
+    });
+    </script>
+<style>
+  .container{
+    padding-right: 15px;
+    padding-left: 0px;
+    margin-right: auto;
+    margin-left: 5px;
+    margin-top: 5px;
+  }
+  #ppt{
+    padding-top: 10px;
+  }
+</style>
+</body>
+
+</html>
